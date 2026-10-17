@@ -82,9 +82,17 @@ export function validateConsultationPayload(raw) {
   };
 }
 
+export function getReceiverEmail() {
+  const envEmail = (process.env.CONTACT_RECEIVER_EMAIL || '').trim();
+  if (!envEmail || envEmail === 'contact@zodiaclegal.com') {
+    return 'zodiaclegal.lucknow@gmail.com';
+  }
+  return envEmail;
+}
+
 async function sendNotificationEmail(sanitized) {
   const apiKey = process.env.RESEND_API_KEY;
-  const receiver = process.env.CONTACT_RECEIVER_EMAIL || 'zodiaclegal.lucknow@gmail.com';
+  const receiver = getReceiverEmail();
   const sender = process.env.CONTACT_SENDER_EMAIL || 'onboarding@resend.dev';
 
   if (apiKey) {
@@ -182,7 +190,7 @@ export function createApp() {
     return c.json({
       status: 'ok',
       service: 'zodiaclegal-consultation-api',
-      recipient: process.env.CONTACT_RECEIVER_EMAIL || 'zodiaclegal.lucknow@gmail.com',
+      recipient: getReceiverEmail(),
       timestamp: new Date().toISOString(),
     });
   });

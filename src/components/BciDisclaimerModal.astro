@@ -4,17 +4,23 @@ import { SITE_CONFIG } from '../data/siteConfig';
 
 <dialog
   id="bci-disclaimer-modal"
+  closedby="any"
   aria-labelledby="bci-modal-title"
   aria-describedby="bci-modal-desc"
-  class="relative m-auto max-w-xl overflow-hidden rounded-md border border-border-strong bg-paper p-6 text-content-primary shadow-2xl sm:p-8"
+  class="relative m-auto max-h-[calc(100dvh-1.5rem)] w-[calc(100vw-1.5rem)] max-w-xl overflow-y-auto overscroll-contain rounded-md border border-border-strong bg-paper p-4 text-content-primary shadow-2xl sm:max-h-[calc(100dvh-3rem)] sm:p-8"
 >
   <div class="brand-gradient-bar absolute inset-x-0 top-0 h-1.5" aria-hidden="true"></div>
-  <div class="flex items-start justify-between gap-4 border-b border-border-subtle pb-4">
+  <div
+    class="flex items-start justify-between gap-3 border-b border-border-subtle pb-3 sm:gap-4 sm:pb-4"
+  >
     <div>
-      <p class="text-xs font-bold tracking-widest text-brass uppercase">
+      <p class="text-[11px] font-bold tracking-widest text-brass uppercase sm:text-xs">
         Bar Council of India Compliance Notice
       </p>
-      <h2 id="bci-modal-title" class="mt-1 font-serif text-xl font-semibold text-content-primary">
+      <h2
+        id="bci-modal-title"
+        class="mt-1 font-serif text-lg font-semibold text-content-primary sm:text-xl"
+      >
         Regulatory Disclaimer &amp; User Acknowledgement
       </h2>
     </div>
@@ -23,11 +29,14 @@ import { SITE_CONFIG } from '../data/siteConfig';
       alt="Zodiac Legal"
       width="110"
       height="55"
-      class="h-10 w-auto rounded bg-white p-1 shadow-sm"
+      class="h-8 w-auto shrink-0 rounded bg-white p-1 shadow-sm sm:h-10"
     />
   </div>
 
-  <div id="bci-modal-desc" class="mt-4 space-y-3 text-sm leading-relaxed text-content-secondary">
+  <div
+    id="bci-modal-desc"
+    class="mt-3 space-y-2.5 text-xs leading-relaxed text-content-secondary sm:mt-4 sm:space-y-3 sm:text-sm"
+  >
     <p>
       Under <strong>Rule 36, Chapter II, Part VI of the Bar Council of India Rules</strong> (framed under
       the Advocates Act, 1961) and the observations of the Hon’ble Supreme Court of India in
@@ -35,7 +44,7 @@ import { SITE_CONFIG } from '../data/siteConfig';
       work or advertise directly or indirectly.
     </p>
     <p>By clicking <strong>“I Acknowledge &amp; Proceed”</strong> below, you confirm that:</p>
-    <ul class="list-disc space-y-1.5 ps-5 text-xs sm:text-sm">
+    <ul class="list-disc space-y-1 ps-5 text-xs sm:space-y-1.5 sm:text-sm">
       <li>
         You are accessing <code class="font-mono text-xs">zodiaclegal.com</code> of your own accord to
         obtain factual information about <strong>{SITE_CONFIG.name}</strong>, its practice areas,
@@ -53,21 +62,22 @@ import { SITE_CONFIG } from '../data/siteConfig';
   </div>
 
   <div
-    class="mt-6 flex flex-wrap items-center justify-end gap-3 border-t border-border-subtle pt-4"
+    class="sticky bottom-0 mt-4 flex flex-col gap-2.5 border-t border-border-subtle bg-paper pt-3 pb-1 sm:mt-6 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-3 sm:pt-4"
   >
-    <a
-      href="/disclaimer/"
-      class="rounded px-3 py-2 text-xs font-semibold text-content-secondary underline hover:text-brass"
-    >
-      Read Full Disclaimer
-    </a>
     <button
       type="button"
       id="bci-accept-btn"
-      class="btn-primary rounded-sm bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 px-5 py-2.5 text-xs font-bold tracking-wider text-white uppercase shadow-md transition-all hover:from-amber-400 hover:to-yellow-300 hover:text-black"
+      class="btn-primary order-1 w-full rounded-sm bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 px-5 py-3 text-center text-xs font-bold tracking-wider text-white uppercase shadow-md transition-all hover:from-amber-400 hover:to-yellow-300 hover:text-black sm:order-2 sm:w-auto sm:py-2.5"
     >
       I Acknowledge &amp; Proceed
     </button>
+    <a
+      href="/disclaimer/"
+      id="bci-read-disclaimer-link"
+      class="order-2 rounded px-3 py-1.5 text-center text-xs font-semibold text-content-secondary underline hover:text-brass sm:order-1 sm:py-2"
+    >
+      Read Full Disclaimer
+    </a>
   </div>
 </dialog>
 
@@ -78,8 +88,18 @@ import { SITE_CONFIG } from '../data/siteConfig';
     const acceptBtn = document.getElementById('bci-accept-btn');
     if (!dialog || !(dialog instanceof HTMLDialogElement)) return;
 
+    function markAcknowledged() {
+      try {
+        localStorage.setItem(STORAGE_KEY, 'true');
+      } catch {
+        // Ignore storage access errors in restricted contexts
+      }
+    }
+
     const params = new URLSearchParams(window.location.search);
-    const skipForAudit = params.get('bci') === 'accepted' || navigator.webdriver === true;
+    const isDisclaimerPage = window.location.pathname.startsWith('/disclaimer');
+    const skipForAudit =
+      params.get('bci') === 'accepted' || navigator.webdriver === true || isDisclaimerPage;
 
     try {
       const acknowledged = localStorage.getItem(STORAGE_KEY) === 'true';
@@ -87,16 +107,37 @@ import { SITE_CONFIG } from '../data/siteConfig';
         dialog.showModal();
       }
     } catch {
-      // Ignore storage access errors in restricted contexts
+      if (!skipForAudit) {
+        try {
+          dialog.showModal();
+        } catch {
+          // Ignore if showModal fails
+        }
+      }
     }
 
     if (acceptBtn) {
       acceptBtn.addEventListener('click', () => {
-        try {
-          localStorage.setItem(STORAGE_KEY, 'true');
-        } catch {
-          // Ignore
-        }
+        markAcknowledged();
+        dialog.close();
+      });
+    }
+
+    dialog.addEventListener('close', () => {
+      markAcknowledged();
+    });
+
+    // Fallback for browsers without closedby="any" support (e.g. Safari iOS)
+    if (!('closedBy' in HTMLDialogElement.prototype)) {
+      dialog.addEventListener('click', (event) => {
+        if (event.target !== dialog) return;
+        const rect = dialog.getBoundingClientRect();
+        const isDialogContent =
+          rect.top <= event.clientY &&
+          event.clientY <= rect.top + rect.height &&
+          rect.left <= event.clientX &&
+          event.clientX <= rect.left + rect.width;
+        if (isDialogContent) return;
         dialog.close();
       });
     }

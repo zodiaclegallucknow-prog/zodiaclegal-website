@@ -37,6 +37,11 @@
     flex-direction: column;
   }
 
+  main {
+    min-width: 0;
+    overflow-x: clip;
+  }
+
   /* Intentional text wrapping per modern-web-guidance `typography` */
   h1,
   h2,
@@ -125,6 +130,7 @@ dialog::backdrop {
 /* Prose / Editorial Styling for Practice Areas & Legal Insights */
 .legal-prose {
   max-width: var(--max-width-prose);
+  min-width: 0;
   font-size: var(--text-base);
   line-height: 1.72;
   color: var(--color-text-primary);
@@ -187,7 +193,11 @@ dialog::backdrop {
 }
 
 .legal-prose table {
+  display: block;
   width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   border-collapse: collapse;
   margin: 1.75rem 0;
   font-size: var(--text-sm);

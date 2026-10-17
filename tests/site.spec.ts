@@ -121,6 +121,7 @@ test.describe('Zodiac Legal — Route, SEO, Schema & Accessibility Smoke Suite',
     page,
   }) => {
     const viewports = [
+      { name: 'Small Mobile (360x640)', width: 360, height: 640 },
       { name: 'Mobile (375x812)', width: 375, height: 812 },
       { name: 'Tablet (768x1024)', width: 768, height: 1024 },
       { name: 'Desktop (1440x900)', width: 1440, height: 900 },
@@ -128,18 +129,73 @@ test.describe('Zodiac Legal — Route, SEO, Schema & Accessibility Smoke Suite',
 
     for (const vp of viewports) {
       await page.setViewportSize({ width: vp.width, height: vp.height });
+      for (const route of [
+        '/?bci=accepted',
+        '/insights/company-incorporation-uttar-pradesh/?bci=accepted',
+      ]) {
+        await page.goto(route);
+
+        const isOverflowing = await page.evaluate(() => {
+          return document.documentElement.scrollWidth > window.innerWidth;
+        });
+        expect(isOverflowing, `Route ${route} overflowed horizontally on ${vp.name}`).toBe(false);
+      }
+
       await page.goto('/?bci=accepted');
-
-      const isOverflowing = await page.evaluate(() => {
-        return document.documentElement.scrollWidth > window.innerWidth;
-      });
-      expect(isOverflowing, `Page overflowed horizontally on ${vp.name}`).toBe(false);
-
       if (vp.width < 1024) {
         await expect(page.locator('#mobile-menu-btn')).toBeVisible();
       } else {
         await expect(page.locator('nav[aria-label="Primary Navigation"]')).toBeVisible();
       }
+    }
+  });
+
+  test('Mobile BCI disclaimer modal shows visible, unclipped accept button and allows entering site on mobile screens', async ({
+    browser,
+  }) => {
+    for (const vp of [
+      { name: 'iPhone SE (320x568)', width: 320, height: 568 },
+      { name: 'Android (360x640)', width: 360, height: 640 },
+      { name: 'iPhone 13 (390x664)', width: 390, height: 664 },
+    ]) {
+      const context = await browser.newContext({
+        viewport: { width: vp.width, height: vp.height },
+        isMobile: true,
+        hasTouch: true,
+      });
+      await context.addInitScript(() => {
+        Object.defineProperty(navigator, 'webdriver', { get: () => false });
+      });
+      const page = await context.newPage();
+      await page.goto('/');
+
+      const dialog = page.locator('#bci-disclaimer-modal');
+      const acceptBtn = page.locator('#bci-accept-btn');
+      await expect(dialog).toBeVisible();
+      await expect(acceptBtn).toBeVisible();
+
+      const metrics = await page.evaluate(() => {
+        const d = document.getElementById('bci-disclaimer-modal')!;
+        const b = document.getElementById('bci-accept-btn')!;
+        const dRect = d.getBoundingClientRect();
+        const bRect = b.getBoundingClientRect();
+        const style = window.getComputedStyle(d);
+        return {
+          overflowY: style.overflowY,
+          btnInsideDialog: bRect.bottom <= dRect.bottom + 1 && bRect.top >= dRect.top - 1,
+          btnInsideViewport: bRect.bottom <= window.innerHeight + 1 && bRect.top >= 0,
+        };
+      });
+
+      expect(metrics.overflowY, `Dialog must be scrollable on ${vp.name}`).toBe('auto');
+      expect(metrics.btnInsideDialog, `Accept button must not be clipped on ${vp.name}`).toBe(true);
+      expect(metrics.btnInsideViewport, `Accept button must be in viewport on ${vp.name}`).toBe(
+        true
+      );
+
+      await acceptBtn.click();
+      await expect(dialog).toBeHidden();
+      await context.close();
     }
   });
 });

@@ -232,7 +232,7 @@ const isHindi = currentPath.startsWith('/hi');
     id="mobile-nav-drawer"
     aria-label="Mobile Navigation"
     hidden
-    class="border-t border-border-subtle bg-paper px-4 pt-3 pb-6 lg:hidden"
+    class="max-h-[calc(100dvh-7.5rem)] overflow-y-auto overscroll-contain border-t border-border-subtle bg-paper px-4 pt-3 pb-20 lg:hidden"
   >
     <div class="flex flex-col space-y-2">
       <a
@@ -347,11 +347,28 @@ const isHindi = currentPath.startsWith('/hi');
 
     const mobileBtn = document.getElementById('mobile-menu-btn');
     const mobileDrawer = document.getElementById('mobile-nav-drawer');
+
+    function closeMobileDrawer() {
+      if (!mobileBtn || !mobileDrawer) return;
+      mobileBtn.setAttribute('aria-expanded', 'false');
+      mobileDrawer.hidden = true;
+    }
+
     if (mobileBtn && mobileDrawer) {
       mobileBtn.addEventListener('click', () => {
         const expanded = mobileBtn.getAttribute('aria-expanded') === 'true';
         mobileBtn.setAttribute('aria-expanded', String(!expanded));
         mobileDrawer.hidden = expanded;
+      });
+
+      mobileDrawer.querySelectorAll('a').forEach((link) => {
+        link.addEventListener('click', () => {
+          closeMobileDrawer();
+        });
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeMobileDrawer();
       });
     }
   })();
